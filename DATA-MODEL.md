@@ -34,7 +34,7 @@ it reads and diffs well, and is meant to be editable by hand.
 | `revision` | Incremented on every write. Half of conflict detection. |
 | `updatedAt` | When the app last wrote the file. |
 | `id` | `crypto.randomUUID()`. Duplicates are reported and skipped on load. |
-| `dueDate` | `YYYY-MM-DD` in the user's **local** calendar, or `null`. Never a timestamp — a due date is a day, not an instant. |
+| `dueDate` | `YYYY-MM-DD` in the user's **local** calendar, or `null`. Never a timestamp — a due date is a day, not an instant. Editable on the card as well as in the edit form; `setDueDate` rejects a date that is not a real calendar day. |
 | `urgent`, `important` | The Covey axes. The quadrant is derived from these; it is never stored. |
 | `done`, `completedAt` | `completedAt` is set when completing and cleared when re-opening; the loader repairs a mismatch. |
 | `order` | Float sort key within the quadrant, ascending. |

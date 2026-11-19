@@ -21,7 +21,8 @@ Useful variants: `npm run test:watch`, `npx vitest run tests/unit/schema.test.ts
 | `dates.test.ts` | Local calendar days, overdue/today, label formatting |
 | `ordering.test.ts` | Top/bottom/midpoint sort keys, tie-breaks |
 | `schema.test.ts` | Parsing, defaults, repairs, version refusal, serialization |
-| `mutations.test.ts` | Every pure task mutation |
+| `mutations.test.ts` | Every pure task mutation, including `setDueDate` and its rejection of impossible dates |
+| `tabs.test.ts` | The tab list and the stored-tab guard |
 | `filesystem-store.test.ts` | `FileSystemStore` against a fake file handle: permissions, read, write, revision conflict |
 | `store.test.ts` | `useTaskTracker`: load, debounced save, conflict handling, error paths |
 
@@ -55,7 +56,7 @@ production build has no seam at all — `pwa.spec.ts` asserts that.
 | `quadrants.spec.ts` | Per-tab filtering, counts, the quadrant picker, editing across quadrants, arrow-key tabs, remembered tab |
 | `reorder.spec.ts` | Move up/down, disabled ends, drag-and-drop, persistence |
 | `done.spec.ts` | Complete, re-open, Today/Earlier grouping, delete |
-| `due-dates.spec.ts` | Overdue/Today/Tomorrow badges, quadrant alert, tab dot |
+| `due-dates.spec.ts` | Overdue/Today/Tomorrow badges, quadrant alert, tab dot, and editing a due date on the card (set, change, clear, Escape, focus return) |
 | `gate.spec.ts` | Gate screen, creating a file, hand-edit repair reporting, invalid JSON, disconnect |
 | `file-storage.spec.ts` | Real file handles: load, write, pretty-printing, a later session, reload from settings |
 | `conflict.spec.ts` | Refused write, reload, overwrite, saving normally afterwards |

@@ -8,6 +8,7 @@ interface Props {
   tasks: Task[];
   onAdd: () => void;
   onToggleDone: (id: string, done: boolean) => void;
+  onSetDueDate: (id: string, dueDate: string | null) => void;
   onSetQuadrant: (id: string, quadrant: QuadrantId) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -20,6 +21,7 @@ export function TaskList({
   tasks,
   onAdd,
   onToggleDone,
+  onSetDueDate,
   onSetQuadrant,
   onEdit,
   onDelete,
@@ -63,6 +65,7 @@ export function TaskList({
               index={index}
               count={tasks.length}
               onToggleDone={(done) => onToggleDone(task.id, done)}
+              onSetDueDate={(dueDate) => onSetDueDate(task.id, dueDate)}
               onSetQuadrant={(next) => onSetQuadrant(task.id, next)}
               onEdit={() => onEdit(task)}
               onDelete={() => onDelete(task)}

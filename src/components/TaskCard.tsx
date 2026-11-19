@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { QuadrantPicker } from './QuadrantPicker.tsx';
-import { dueStatus, formatDue } from '../dates.ts';
+import { DueDateControl } from './DueDateControl.tsx';
 import { quadrantOf } from '../quadrants.ts';
 import type { QuadrantId, Task } from '../types.ts';
 
@@ -9,6 +9,7 @@ interface Props {
   index: number;
   count: number;
   onToggleDone: (done: boolean) => void;
+  onSetDueDate: (dueDate: string | null) => void;
   onSetQuadrant: (quadrant: QuadrantId) => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -21,6 +22,7 @@ export function TaskCard({
   index,
   count,
   onToggleDone,
+  onSetDueDate,
   onSetQuadrant,
   onEdit,
   onDelete,
@@ -30,7 +32,6 @@ export function TaskCard({
   const [showNotes, setShowNotes] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const status = dueStatus(task.dueDate);
 
   return (
     <li
@@ -67,11 +68,11 @@ export function TaskCard({
         <div className="card-body">
           <p className="card-title">{task.title}</p>
           <div className="card-meta">
-            {task.dueDate && (
-              <span className={`badge badge-${status}`} data-testid="due-badge">
-                {formatDue(task.dueDate)}
-              </span>
-            )}
+            <DueDateControl
+              taskTitle={task.title}
+              dueDate={task.dueDate}
+              onChange={onSetDueDate}
+            />
             {task.notes && (
               <button
                 type="button"

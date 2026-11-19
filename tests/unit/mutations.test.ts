@@ -7,6 +7,7 @@ import {
   nudgeTask,
   openCounts,
   setDone,
+  setDueDate,
   setQuadrant,
   tasksInQuadrant,
   updateTask,
@@ -158,6 +159,41 @@ describe('openCounts', () => {
       makeTask({ urgent: false, important: false }),
     );
     expect(openCounts(file)).toEqual({ q1: 1, q2: 0, q3: 0, q4: 1 });
+  });
+});
+
+describe('setDueDate', () => {
+  it('sets a due date on a task that had none', () => {
+    const file = fileOf(makeTask({ id: 'a' }));
+    const next = setDueDate(file, 'a', '2026-11-20', NOW);
+    expect(next.tasks[0]).toMatchObject({ dueDate: '2026-11-20', updatedAt: NOW });
+  });
+
+  it('changes and clears an existing due date', () => {
+    const file = fileOf(makeTask({ id: 'a', dueDate: '2026-11-20' }));
+    expect(setDueDate(file, 'a', '2026-12-01', NOW).tasks[0].dueDate).toBe('2026-12-01');
+    expect(setDueDate(file, 'a', null, NOW).tasks[0].dueDate).toBeNull();
+  });
+
+  it('leaves everything else about the task alone', () => {
+    const file = fileOf(
+      makeTask({ id: 'a', title: 'Keep me', order: 7, urgent: true, important: false }),
+    );
+    const next = setDueDate(file, 'a', '2026-11-20', NOW);
+    expect(next.tasks[0]).toMatchObject({ title: 'Keep me', order: 7, urgent: true });
+    expect(quadrantOf(next.tasks[0])).toBe('q3');
+  });
+
+  it('refuses an impossible date', () => {
+    const file = fileOf(makeTask({ id: 'a', dueDate: null }));
+    expect(setDueDate(file, 'a', '2026-02-30', NOW)).toBe(file);
+    expect(setDueDate(file, 'a', 'tomorrow', NOW)).toBe(file);
+  });
+
+  it('is a no-op for an unchanged date or an unknown id', () => {
+    const file = fileOf(makeTask({ id: 'a', dueDate: '2026-11-20' }));
+    expect(setDueDate(file, 'a', '2026-11-20', NOW)).toBe(file);
+    expect(setDueDate(file, 'nope', '2026-11-20', NOW)).toBe(file);
   });
 });
 

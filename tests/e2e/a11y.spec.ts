@@ -43,6 +43,7 @@ test('every card action has an accessible name', async ({ page }) => {
     'Move Labelled up',
     'Move Labelled down',
     'Change quadrant of Labelled',
+    'Set a due date for Labelled',
     'Edit Labelled',
     'Delete Labelled',
   ]) {

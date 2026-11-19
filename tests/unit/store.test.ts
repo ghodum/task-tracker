@@ -71,6 +71,14 @@ describe('useTaskTracker', () => {
       expect(parseTaskFile(store.text).file.tasks[0]).toMatchObject({ urgent: true }),
     );
 
+    act(() => result.current[1].setDueDate(id, '2026-11-20'));
+    await waitFor(() =>
+      expect(parseTaskFile(store.text).file.tasks[0].dueDate).toBe('2026-11-20'),
+    );
+
+    act(() => result.current[1].setDueDate(id, null));
+    await waitFor(() => expect(parseTaskFile(store.text).file.tasks[0].dueDate).toBeNull());
+
     act(() => result.current[1].setDone(id, true));
     await waitFor(() => expect(parseTaskFile(store.text).file.tasks[0].done).toBe(true));
 

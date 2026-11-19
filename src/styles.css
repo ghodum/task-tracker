@@ -319,6 +319,35 @@ button {
   font-size: 12px;
 }
 
+.badge-button {
+  cursor: pointer;
+}
+
+.badge-button:hover {
+  border-color: var(--text-dim);
+}
+
+.due-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-date {
+  width: auto;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .badge-overdue {
   background: var(--q1);
   border-color: transparent;

@@ -28,6 +28,7 @@ export interface TaskTrackerActions {
   updateTask(id: string, input: TaskInput): void;
   setQuadrant(id: string, quadrant: QuadrantId): void;
   setDone(id: string, done: boolean): void;
+  setDueDate(id: string, dueDate: string | null): void;
   deleteTask(id: string): void;
   moveTask(id: string, toIndex: number): void;
   nudgeTask(id: string, delta: -1 | 1): void;
@@ -168,6 +169,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
       updateTask: (id, input) => apply((current) => mutate.updateTask(current, id, input)),
       setQuadrant: (id, quadrant) => apply((current) => mutate.setQuadrant(current, id, quadrant)),
       setDone: (id, done) => apply((current) => mutate.setDone(current, id, done)),
+      setDueDate: (id, dueDate) => apply((current) => mutate.setDueDate(current, id, dueDate)),
       deleteTask: (id) => apply((current) => mutate.deleteTask(current, id)),
       moveTask: (id, toIndex) => apply((current) => mutate.moveTask(current, id, toIndex)),
       nudgeTask: (id, delta) => apply((current) => mutate.nudgeTask(current, id, delta)),

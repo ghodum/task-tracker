@@ -11,6 +11,12 @@
 - Every dialog is built on `Modal`, which traps focus, closes on Escape and
   returns focus to whatever opened it. Do not hand-roll a dialog.
 - `Confirm` guards anything destructive. Deleting a task always confirms.
+- **Edit in place where a single field is involved.** `DueDateControl` is the
+  pattern: the badge is the button, clicking it swaps in the field, and the
+  change commits immediately. The edit form is for editing a task as a whole,
+  not for changing one value. A control like this restores focus to its
+  trigger when it closes by choice (commit, Clear, Escape) but not when the
+  user tabs away — see the `restoreFocus` ref in `DueDateControl.tsx`.
 
 ## Layout
 
@@ -44,7 +50,10 @@ These are tested in `tests/e2e/a11y.spec.ts`; keep them true.
 
 - Every icon-only control has an `aria-label` that names its task, e.g.
   `Edit Buy milk`, `Move Buy milk up`, `Complete Buy milk`. This is both an
-  accessibility requirement and how the tests find things.
+  accessibility requirement and how the tests find things. In-place editors
+  follow the same rule on all three states: `Set a due date for Buy milk`,
+  `Change due date of Buy milk`, `Clear due date of Buy milk`, and the field
+  itself is labelled `Due date for Buy milk` (visually hidden).
 - Drag-and-drop always has a keyboard equivalent — the ↑/↓ buttons, disabled at
   the ends of the list.
 - The quadrant picker is a `fieldset`/`legend` with real radio inputs, so it

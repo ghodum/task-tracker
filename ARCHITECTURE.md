@@ -10,6 +10,8 @@ index.html
               │     ├── src/mutations.ts  pure (TaskFile, …) => TaskFile
               │     └── src/storage/*     the TaskStore implementations
               └── src/components/*        presentational, no persistence
+                                          (incl. DueDateControl, the in-place
+                                           due-date editor on each card)
 ```
 
 Supporting pure modules: `src/types.ts` (the data model), `src/quadrants.ts`

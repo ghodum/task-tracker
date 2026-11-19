@@ -130,6 +130,7 @@ export function App({ store }: Props) {
           tasks={tasksInQuadrant(file, tab)}
           onAdd={() => setAdding(tab)}
           onToggleDone={actions.setDone}
+          onSetDueDate={actions.setDueDate}
           onSetQuadrant={actions.setQuadrant}
           onEdit={setEditing}
           onDelete={setDeleting}

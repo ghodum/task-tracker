@@ -1,5 +1,6 @@
 import type { QuadrantId, Task, TaskFile } from './types.ts';
 import { flagsFor, quadrantOf } from './quadrants.ts';
+import { isValidDueDate } from './dates.ts';
 import { byOrder, orderForMove, orderForTop } from './ordering.ts';
 
 export interface TaskInput {
@@ -111,6 +112,19 @@ export function setDone(file: TaskFile, id: string, done: boolean, now = Date.no
     order,
     updatedAt: now,
   }));
+}
+
+/** Set or clear a task's due date without touching anything else. */
+export function setDueDate(
+  file: TaskFile,
+  id: string,
+  dueDate: string | null,
+  now = Date.now(),
+): TaskFile {
+  const existing = file.tasks.find((task) => task.id === id);
+  if (!existing || existing.dueDate === dueDate) return file;
+  if (dueDate !== null && !isValidDueDate(dueDate)) return file;
+  return replace(file, id, (task) => ({ ...task, dueDate, updatedAt: now }));
 }
 
 export function deleteTask(file: TaskFile, id: string): TaskFile {
