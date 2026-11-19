@@ -54,8 +54,10 @@ These are tested in `tests/e2e/a11y.spec.ts`; keep them true.
   follow the same rule on all three states: `Set a due date for Buy milk`,
   `Change due date of Buy milk`, `Clear due date of Buy milk`, and the field
   itself is labelled `Due date for Buy milk` (visually hidden).
-- Drag-and-drop always has a keyboard equivalent — the ↑/↓ buttons, disabled at
-  the ends of the list.
+- Drag-and-drop always has a keyboard equivalent — the ↑/↓ buttons for one step
+  and ⤒/⤓ to jump to an end (`Move Buy milk to top`, `Move Buy milk to bottom`).
+  A move button is `disabled` whenever it would not change the order: the top
+  card's ↑ and ⤒, the last card's ↓ and ⤓.
 - The quadrant picker is a `fieldset`/`legend` with real radio inputs, so it
   works with a keyboard and a screen reader even though it is drawn as a grid.
 - Form fields are wrapped in a `<label>` with a real `htmlFor`; errors use

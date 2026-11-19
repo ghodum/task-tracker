@@ -3,6 +3,7 @@ import {
   addTask,
   completedTasks,
   deleteTask,
+  jumpTask,
   moveTask,
   nudgeTask,
   openCounts,
@@ -205,7 +206,7 @@ describe('deleteTask', () => {
   });
 });
 
-describe('moveTask / nudgeTask', () => {
+describe('moveTask / nudgeTask / jumpTask', () => {
   const three = () =>
     fileOf(
       makeTask({ id: 'a', title: 'A', order: 0 }),
@@ -225,11 +226,38 @@ describe('moveTask / nudgeTask', () => {
     expect(titles(nudgeTask(three(), 'c', 1, NOW), 'q2')).toEqual(['A', 'B', 'C']);
   });
 
+  it('jumps a task to either end in one move', () => {
+    expect(titles(jumpTask(three(), 'c', 'top', NOW), 'q2')).toEqual(['C', 'A', 'B']);
+    expect(titles(jumpTask(three(), 'a', 'bottom', NOW), 'q2')).toEqual(['B', 'C', 'A']);
+    expect(titles(jumpTask(three(), 'b', 'top', NOW), 'q2')).toEqual(['B', 'A', 'C']);
+    expect(titles(jumpTask(three(), 'b', 'bottom', NOW), 'q2')).toEqual(['A', 'C', 'B']);
+  });
+
+  it('leaves the file alone when the task is already at that end', () => {
+    const file = three();
+    expect(jumpTask(file, 'a', 'top', NOW)).toBe(file);
+    expect(jumpTask(file, 'c', 'bottom', NOW)).toBe(file);
+
+    const only = fileOf(makeTask({ id: 'a', order: 0 }));
+    expect(jumpTask(only, 'a', 'top', NOW)).toBe(only);
+    expect(jumpTask(only, 'a', 'bottom', NOW)).toBe(only);
+  });
+
+  it('keeps everything but order and updatedAt', () => {
+    const file = three();
+    const before = file.tasks.find((t) => t.id === 'c')!;
+    const moved = jumpTask(file, 'c', 'top', NOW).tasks.find((t) => t.id === 'c')!;
+    expect({ ...moved, order: before.order, updatedAt: before.updatedAt }).toEqual(before);
+    expect(moved.updatedAt).toBe(NOW);
+  });
+
   it('ignores completed and unknown tasks', () => {
     const file = fileOf(makeTask({ id: 'a', done: true, completedAt: 1 }));
     expect(moveTask(file, 'a', 0, NOW)).toBe(file);
     expect(nudgeTask(file, 'a', 1, NOW)).toBe(file);
+    expect(jumpTask(file, 'a', 'top', NOW)).toBe(file);
     expect(moveTask(file, 'nope', 0, NOW)).toBe(file);
     expect(nudgeTask(file, 'nope', 1, NOW)).toBe(file);
+    expect(jumpTask(file, 'nope', 'bottom', NOW)).toBe(file);
   });
 });

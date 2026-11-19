@@ -40,8 +40,10 @@ test('every card action has an accessible name', async ({ page }) => {
 
   for (const name of [
     'Complete Labelled',
+    'Move Labelled to top',
     'Move Labelled up',
     'Move Labelled down',
+    'Move Labelled to bottom',
     'Change quadrant of Labelled',
     'Set a due date for Labelled',
     'Edit Labelled',

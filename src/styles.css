@@ -304,6 +304,8 @@ button {
 
 .card-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 2px;
 }
 

@@ -13,6 +13,7 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onNudge: (id: string, delta: -1 | 1) => void;
+  onJump: (id: string, edge: 'top' | 'bottom') => void;
   onMove: (id: string, toIndex: number) => void;
 }
 
@@ -26,6 +27,7 @@ export function TaskList({
   onEdit,
   onDelete,
   onNudge,
+  onJump,
   onMove,
 }: Props) {
   const meta = quadrantMeta(quadrant);
@@ -70,6 +72,7 @@ export function TaskList({
               onEdit={() => onEdit(task)}
               onDelete={() => onDelete(task)}
               onNudge={(delta) => onNudge(task.id, delta)}
+              onJump={(edge) => onJump(task.id, edge)}
               onDropOn={(fromId) => onMove(fromId, index)}
             />
           ))}

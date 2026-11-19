@@ -135,6 +135,7 @@ export function App({ store }: Props) {
           onEdit={setEditing}
           onDelete={setDeleting}
           onNudge={actions.nudgeTask}
+          onJump={actions.jumpTask}
           onMove={actions.moveTask}
         />
       )}

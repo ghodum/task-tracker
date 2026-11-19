@@ -35,7 +35,8 @@ API, which is what lets the app read and write your own file.
 - **Add task** on any quadrant tab creates a task there. Title, notes and a due
   date are all optional except the title.
 - The **⠿ button** on a card opens the 2×2 picker to move a task to another
-  quadrant; **↑ / ↓** reorder within a quadrant, and cards can be dragged.
+  quadrant; **↑ / ↓** move one step and **⤒ / ⤓** jump to the top or bottom of
+  the quadrant, and cards can be dragged.
 - **Due dates are edited on the card.** Click the date badge — or **Add date**
   on a task that has none — to pick a date right there; **Clear** removes it
   and Escape leaves it alone. No need to open the edit form.

@@ -32,6 +32,7 @@ export interface TaskTrackerActions {
   deleteTask(id: string): void;
   moveTask(id: string, toIndex: number): void;
   nudgeTask(id: string, delta: -1 | 1): void;
+  jumpTask(id: string, edge: 'top' | 'bottom'): void;
   /** Conflict resolution: take the file's version, or keep ours. */
   resolveWithFile(): Promise<void>;
   resolveWithMine(): Promise<void>;
@@ -173,6 +174,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
       deleteTask: (id) => apply((current) => mutate.deleteTask(current, id)),
       moveTask: (id, toIndex) => apply((current) => mutate.moveTask(current, id, toIndex)),
       nudgeTask: (id, delta) => apply((current) => mutate.nudgeTask(current, id, delta)),
+      jumpTask: (id, edge) => apply((current) => mutate.jumpTask(current, id, edge)),
       async resolveWithFile() {
         pending.current = null;
         if (timer.current) clearTimeout(timer.current);

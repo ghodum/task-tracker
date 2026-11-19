@@ -127,6 +127,15 @@ describe('useTaskTracker', () => {
           .map((t) => t.title),
       ).toEqual(['A', 'B']),
     );
+
+    act(() => result.current[1].jumpTask('a', 'bottom'));
+    await waitFor(() =>
+      expect(
+        [...parseTaskFile(store.text).file.tasks]
+          .sort((x, y) => x.order - y.order)
+          .map((t) => t.title),
+      ).toEqual(['B', 'A']),
+    );
   });
 
   it('reports a conflict instead of overwriting an outside edit', async () => {

@@ -14,6 +14,7 @@ interface Props {
   onEdit: () => void;
   onDelete: () => void;
   onNudge: (delta: -1 | 1) => void;
+  onJump: (edge: 'top' | 'bottom') => void;
   onDropOn: (fromId: string) => void;
 }
 
@@ -27,6 +28,7 @@ export function TaskCard({
   onEdit,
   onDelete,
   onNudge,
+  onJump,
   onDropOn,
 }: Props) {
   const [showNotes, setShowNotes] = useState(false);
@@ -91,6 +93,15 @@ export function TaskCard({
           <button
             type="button"
             className="icon-btn"
+            aria-label={`Move ${task.title} to top`}
+            disabled={index === 0}
+            onClick={() => onJump('top')}
+          >
+            ⤒
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
             aria-label={`Move ${task.title} up`}
             disabled={index === 0}
             onClick={() => onNudge(-1)}
@@ -105,6 +116,15 @@ export function TaskCard({
             onClick={() => onNudge(1)}
           >
             ↓
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={`Move ${task.title} to bottom`}
+            disabled={index === count - 1}
+            onClick={() => onJump('bottom')}
+          >
+            ⤓
           </button>
           <button
             type="button"

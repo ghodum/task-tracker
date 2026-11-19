@@ -40,6 +40,40 @@ test('persists a new order to the file and across a reload', async ({ page }) =>
   await expect(cardTitles(page)).toHaveText(['A', 'C', 'B']);
 });
 
+test('jumps a task to the top or the bottom in one click', async ({ page }) => {
+  await openApp(page, { tasks: three() });
+
+  await page.getByRole('button', { name: 'Move C to top' }).click();
+  await expect(cardTitles(page)).toHaveText(['C', 'A', 'B']);
+
+  await page.getByRole('button', { name: 'Move C to bottom' }).click();
+  await expect(cardTitles(page)).toHaveText(['A', 'B', 'C']);
+});
+
+test('disables the jump buttons at the end they would move to', async ({ page }) => {
+  await openApp(page, { tasks: three() });
+
+  await expect(page.getByRole('button', { name: 'Move A to top' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Move C to bottom' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Move B to top' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Move B to bottom' })).toBeEnabled();
+});
+
+test('persists a jump to the file and across a reload', async ({ page }) => {
+  await openApp(page, { tasks: three() });
+
+  await page.getByRole('button', { name: 'Move C to top' }).click();
+  await expect
+    .poll(async () => {
+      const file = await readFile(page);
+      return [...file.tasks].sort((x, y) => x.order - y.order).map((t) => t.title);
+    })
+    .toEqual(['C', 'A', 'B']);
+
+  await page.reload();
+  await expect(cardTitles(page)).toHaveText(['C', 'A', 'B']);
+});
+
 test('reorders by dragging one card onto another', async ({ page }) => {
   await openApp(page, { tasks: three() });
 

@@ -144,6 +144,20 @@ export function moveTask(file: TaskFile, id: string, toIndex: number, now = Date
   return replace(file, id, (task) => ({ ...task, order, updatedAt: now }));
 }
 
+/** Move a task to the first or last position within its quadrant. */
+export function jumpTask(
+  file: TaskFile,
+  id: string,
+  edge: 'top' | 'bottom',
+  now = Date.now(),
+): TaskFile {
+  const existing = file.tasks.find((task) => task.id === id);
+  if (!existing || existing.done) return file;
+  const ordered = tasksInQuadrant(file, quadrantOf(existing));
+  const toIndex = edge === 'top' ? 0 : ordered.length - 1;
+  return moveTask(file, id, toIndex, now);
+}
+
 /** Move a task one step up or down within its quadrant (keyboard path). */
 export function nudgeTask(file: TaskFile, id: string, delta: -1 | 1, now = Date.now()): TaskFile {
   const existing = file.tasks.find((task) => task.id === id);
