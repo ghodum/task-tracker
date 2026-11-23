@@ -19,6 +19,32 @@ test('offers to open or create a file, then shows the tasks', async ({ page }) =
   await expect(page.getByRole('tablist')).toBeVisible();
 });
 
+test('asks for one more click when the picker leaves the file unreadable', async ({ page }) => {
+  // ?e2e=opfs-prompt picks a file that has no write permission yet, which is
+  // what a real picked file looks like: the picker spent the click, so the
+  // grant has to wait for another one.
+  await page.goto('/?e2e=opfs-prompt');
+  await page.getByRole('button', { name: 'Open task file…' }).click();
+
+  await expect(page.getByText('one click to let this app read and write it again')).toBeVisible();
+  await expect(page.getByRole('alert')).toBeHidden();
+
+  await page.getByRole('button', { name: 'Reconnect task file' }).click();
+  await expect(page.getByRole('tablist')).toBeVisible();
+});
+
+test('finishes creating a new file after the extra permission click', async ({ page }) => {
+  await page.goto('/?e2e=opfs-prompt');
+  await page.getByRole('button', { name: 'Create new file…' }).click();
+  await page.getByRole('button', { name: 'Reconnect task file' }).click();
+
+  await expect(page.getByText('Nothing here.')).toBeVisible();
+  const text = await page.evaluate(() =>
+    (window as unknown as { __taskTracker: { read(): Promise<string> } }).__taskTracker.read(),
+  );
+  expect(JSON.parse(text)).toMatchObject({ schemaVersion: 1, tasks: [] });
+});
+
 test('creating a new file starts an empty, valid task list', async ({ page }) => {
   await page.goto('/?e2e=opfs');
   await page.getByRole('button', { name: 'Create new file…' }).click();
@@ -28,6 +54,23 @@ test('creating a new file starts an empty, valid task list', async ({ page }) =>
     (window as unknown as { __taskTracker: { read(): Promise<string> } }).__taskTracker.read(),
   );
   expect(JSON.parse(text)).toMatchObject({ schemaVersion: 1, tasks: [] });
+});
+
+test('changing the file from the settings panel asks for its own click', async ({ page }) => {
+  await page.goto('/?e2e=opfs-prompt');
+  await page.getByRole('button', { name: 'Open task file…' }).click();
+  await page.getByRole('button', { name: 'Reconnect task file' }).click();
+  await expect(page.getByRole('tablist')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Task file settings' }).click();
+  await page.getByRole('button', { name: 'Change file…' }).click();
+
+  // The newly picked file needs a grant of its own, so the gate comes back.
+  await expect(page.getByText('one click to let this app read and write it again')).toBeVisible();
+  await expect(page.getByRole('alert')).toBeHidden();
+
+  await page.getByRole('button', { name: 'Reconnect task file' }).click();
+  await expect(page.getByRole('tablist')).toBeVisible();
 });
 
 test('reports records it could not read in a hand-edited file', async ({ page }) => {

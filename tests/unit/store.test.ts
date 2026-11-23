@@ -240,6 +240,59 @@ describe('useTaskTracker', () => {
     expect(titles(parseTaskFile(store.text).file)).toEqual(['Mine']);
   });
 
+  describe('changing the connected file', () => {
+    const otherFile = seeded([makeTask({ title: 'In the other file' })], 4);
+
+    it('loads the newly picked file', async () => {
+      const store = new MemoryStore({ text: seeded([makeTask({ title: 'Original' })]) });
+      const { result } = await mount(store);
+
+      store.setFile(otherFile, 'other-tasks.json');
+      await act(async () => {
+        await result.current[1].connect('pick');
+      });
+
+      expect(result.current[0].status).toBe('ready');
+      expect(result.current[0].fileName).toBe('other-tasks.json');
+      expect(titles(result.current[0].file)).toEqual(['In the other file']);
+      expect(result.current[0].busy).toBe(false);
+    });
+
+    it('waits on the gate when the new file still needs permission', async () => {
+      const store = new MemoryStore({
+        text: seeded([makeTask({ title: 'Original' })]),
+        onConnect: (mode) => (mode === 'pick' ? ('needs-permission' as StoreStatus) : undefined),
+      });
+      const { result } = await mount(store);
+
+      await act(async () => {
+        await result.current[1].connect('pick');
+      });
+
+      expect(result.current[0].status).toBe('needs-permission');
+      expect(result.current[0].error).toBeNull();
+      expect(result.current[0].busy).toBe(false);
+    });
+
+    it('does not write the old file\'s tasks into the newly picked one', async () => {
+      const store = new MemoryStore({ text: seeded([makeTask({ title: 'Original' })]) });
+      const { result } = await mount(store);
+
+      // An edit is still waiting on the debounce when the file is swapped.
+      act(() => {
+        result.current[1].addTask({ title: 'Typed before switching', quadrant: 'q1' });
+      });
+      store.setFile(otherFile, 'other-tasks.json');
+      await act(async () => {
+        await result.current[1].connect('pick');
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      expect(titles(parseTaskFile(store.text).file)).toEqual(['In the other file']);
+      expect(titles(result.current[0].file)).toEqual(['In the other file']);
+    });
+  });
+
   it('starts on the gate when the browser cannot reach a file at all', async () => {
     const unsupported: TaskStore = {
       init: async () => 'unsupported' as StoreStatus,

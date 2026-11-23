@@ -17,10 +17,11 @@ import type { FsaFileHandle, Pickers } from './fsa.ts';
 const SEED_KEY = 'task-tracker:e2e-file';
 const OPFS_FILE = 'e2e-task-tracker-task.json';
 
-export type E2eMode = '1' | 'opfs';
+export type E2eMode = '1' | 'opfs' | 'opfs-prompt';
 
 export function createE2eStore(mode: E2eMode): TaskStore {
   if (mode === 'opfs') return createOpfsStore();
+  if (mode === 'opfs-prompt') return createOpfsStore({ needsGesture: true });
   return createMemoryStore();
 }
 
@@ -34,13 +35,18 @@ function createMemoryStore(): TaskStore {
   return store;
 }
 
-function createOpfsStore(): TaskStore {
-  const handle = async (): Promise<FsaFileHandle> => {
+function createOpfsStore(options: { needsGesture?: boolean } = {}): TaskStore {
+  const needsGesture = options.needsGesture === true;
+  const open = async (): Promise<FsaFileHandle> => {
     const root = await navigator.storage.getDirectory();
     return (await root.getFileHandle(OPFS_FILE, {
       create: true,
     })) as unknown as FsaFileHandle;
   };
+  const handle = async (): Promise<FsaFileHandle> => open();
+  /** What a pick hands back: a fresh handle, ungranted when gated. */
+  const picked = async (): Promise<FsaFileHandle> =>
+    needsGesture ? gestureHandle(await open()) : open();
 
   let remembered: FsaFileHandle | null = null;
   const handles: HandleStorage = {
@@ -57,10 +63,10 @@ function createOpfsStore(): TaskStore {
 
   const pickers: Pickers = {
     async showOpenFilePicker() {
-      return [await handle()];
+      return [await picked()];
     },
     async showSaveFilePicker() {
-      return handle();
+      return picked();
     },
   };
 
@@ -78,6 +84,36 @@ function createOpfsStore(): TaskStore {
     },
   });
   return store;
+}
+
+/**
+ * Stands in for the one thing the OPFS store cannot reproduce: a real picked
+ * file, which arrives without readwrite permission. Chrome refuses to request
+ * it right after the picker, because the picker consumed the click, so the
+ * first request fails and only a later one — from the gate's own button — can
+ * be granted. Each pick returns its own handle, so changing file needs its own
+ * click just as a first pick does.
+ */
+function gestureHandle(inner: FsaFileHandle): FsaFileHandle {
+  let granted = false;
+  let spent = false;
+  return {
+    name: inner.name,
+    getFile: () => inner.getFile(),
+    createWritable: (write) => inner.createWritable(write),
+    queryPermission: async () => (granted ? 'granted' : 'prompt'),
+    requestPermission: async () => {
+      if (!spent) {
+        spent = true;
+        throw new DOMException(
+          'User activation is required to request permissions.',
+          'SecurityError',
+        );
+      }
+      granted = true;
+      return 'granted';
+    },
+  };
 }
 
 /** Hooks Playwright uses to read and write the "file" the app is using. */

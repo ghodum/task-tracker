@@ -58,6 +58,22 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
   const pending = useRef<TaskFile | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef(false);
+  /**
+   * Bumped whenever the connected file changes. A write belongs to the file
+   * that was connected when it was scheduled, so a stale one is dropped
+   * rather than landing in a file the user has just switched to.
+   */
+  const epoch = useRef(0);
+
+  /** Forget writes aimed at the file we are leaving. */
+  const discardPending = useCallback(() => {
+    epoch.current += 1;
+    pending.current = null;
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }, []);
 
   const describe = useCallback(() => setFileName(store.describe()?.name ?? null), [store]);
 
@@ -80,10 +96,13 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
     if (saving.current) return;
     const next = pending.current;
     if (!next) return;
+    const written = epoch.current;
     pending.current = null;
     saving.current = true;
     try {
       const result = await store.save(next);
+      // The file was swapped underneath this write; it is not ours to apply.
+      if (epoch.current !== written) return;
       if (result.ok) {
         // Adopt the written revision so the next save is not a false conflict.
         setFile((current) => (current === next ? result.file : { ...current, ...revision(result.file) }));
@@ -145,6 +164,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
     () => ({
       async connect(mode) {
         setBusy(true);
+        discardPending();
         try {
           const next = await store.connect(mode);
           setStatus(next);
@@ -158,6 +178,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
         }
       },
       async disconnect() {
+        discardPending();
         await store.disconnect();
         setStatus(store.status());
         setFile(emptyTaskFile());
@@ -176,8 +197,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
       nudgeTask: (id, delta) => apply((current) => mutate.nudgeTask(current, id, delta)),
       jumpTask: (id, edge) => apply((current) => mutate.jumpTask(current, id, edge)),
       async resolveWithFile() {
-        pending.current = null;
-        if (timer.current) clearTimeout(timer.current);
+        discardPending();
         await loadFromStore();
       },
       async resolveWithMine() {
@@ -193,7 +213,7 @@ export function useTaskTracker(store: TaskStore): [TaskTrackerState, TaskTracker
       dismissProblems: () => setProblems([]),
       dismissError: () => setError(null),
     }),
-    [store, apply, describe, loadFromStore, conflict, file],
+    [store, apply, describe, discardPending, loadFromStore, conflict, file],
   );
 
   return [{ status, file, fileName, problems, conflict, error, busy }, actions];

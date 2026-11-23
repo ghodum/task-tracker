@@ -82,6 +82,82 @@ describe('FileSystemStore', () => {
     expect(file.tasks.map((t) => t.title)).toEqual(['Keep me']);
   });
 
+  it('does not re-ask for permission the picker already granted', async () => {
+    const pickers = fakePickers(handle);
+    const fs = new FileSystemStore(handles, pickers);
+    expect(await fs.connect('open')).toBe('ready');
+    expect(handle.requests).toBe(0);
+  });
+
+  it('remembers a picked file whose permission request is refused', async () => {
+    // Chrome refuses a permission request made right after the picker, which
+    // consumed the user's gesture.
+    handle.permission = 'prompt';
+    handle.refuseNextRequest = true;
+    const pickers = fakePickers(handle);
+    const fs = new FileSystemStore(handles, pickers);
+
+    expect(await fs.connect('open')).toBe('needs-permission');
+    // The file is adopted anyway, so the gate can ask for one more click.
+    expect(fs.describe()).toEqual({ name: DEFAULT_FILE_NAME });
+    expect(handles.handle).toBe(handle);
+
+    // That click re-grants permission without opening the picker again.
+    expect(await fs.connect('open')).toBe('ready');
+    expect(pickers.opens).toBe(1);
+  });
+
+  it('creates the file once permission survives a refused request', async () => {
+    handle.permission = 'prompt';
+    handle.refuseNextRequest = true;
+    const fs = store();
+
+    expect(await fs.connect('create')).toBe('needs-permission');
+    expect(handle.text).toBe('');
+
+    expect(await fs.connect('open')).toBe('ready');
+    const { file, problems } = await fs.load();
+    expect(file.tasks).toEqual([]);
+    expect(file.schemaVersion).toBe(1);
+    expect(problems).toEqual([]);
+    expect(JSON.parse(handle.text)).toMatchObject({ schemaVersion: 1, tasks: [] });
+  });
+
+  it('switches to another file when one is picked from the settings panel', async () => {
+    const replacement = new FakeFileHandle('other-tasks.json', {
+      text: serializeTaskFile(fileWith([makeTask({ title: 'In the other file' })])),
+    });
+    handle.text = serializeTaskFile(fileWith([makeTask({ title: 'In the first file' })]));
+    handles.handle = handle;
+    const fs = new FileSystemStore(handles, fakePickers(replacement));
+    expect(await fs.init()).toBe('ready');
+
+    expect(await fs.connect('pick')).toBe('ready');
+    expect(fs.describe()).toEqual({ name: 'other-tasks.json' });
+    expect(handles.handle).toBe(replacement);
+    const { file } = await fs.load();
+    expect(file.tasks.map((t) => t.title)).toEqual(['In the other file']);
+    // The file left behind is untouched.
+    expect(parseTaskFile(handle.text).file.tasks.map((t) => t.title)).toEqual(['In the first file']);
+  });
+
+  it('switches file even when the new one needs another click', async () => {
+    const replacement = new FakeFileHandle('other-tasks.json', {
+      text: serializeTaskFile(fileWith([makeTask({ title: 'In the other file' })])),
+      permission: 'prompt',
+    });
+    replacement.refuseNextRequest = true;
+    handles.handle = handle;
+    const fs = new FileSystemStore(handles, fakePickers(replacement));
+    await fs.init();
+
+    expect(await fs.connect('pick')).toBe('needs-permission');
+    expect(fs.describe()).toEqual({ name: 'other-tasks.json' });
+    expect(await fs.connect('open')).toBe('ready');
+    const { file } = await fs.load();
+    expect(file.tasks.map((t) => t.title)).toEqual(['In the other file']);
+  });
+
   it('reports problems from a hand-edited file', async () => {
     handle.text = JSON.stringify({ schemaVersion: 1, tasks: [{ title: 'No id' }] });
     const fs = store({ remembered: true });

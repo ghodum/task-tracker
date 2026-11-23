@@ -22,12 +22,23 @@ export class MemoryStore implements TaskStore {
 
   readonly #onChange: ((text: string) => void) | undefined;
 
+  readonly #onConnect: ((mode: ConnectMode) => StoreStatus | void) | undefined;
+
   constructor(
-    options: { text?: string; status?: StoreStatus; onChange?: (text: string) => void } = {},
+    options: {
+      text?: string;
+      status?: StoreStatus;
+      name?: string;
+      onChange?: (text: string) => void;
+      /** Lets a test model a pick: swap the text, or withhold permission. */
+      onConnect?: (mode: ConnectMode) => StoreStatus | void;
+    } = {},
   ) {
     this.#text = options.text ?? serializeTaskFile(emptyTaskFile());
     this.#status = options.status ?? 'ready';
+    if (options.name !== undefined) this.#name = options.name;
     this.#onChange = options.onChange;
+    this.#onConnect = options.onConnect;
   }
 
   /** The current file contents, as a test would read them from disk. */
@@ -38,6 +49,13 @@ export class MemoryStore implements TaskStore {
   /** Simulate an edit made outside the app. */
   setText(text: string): void {
     this.#text = text;
+  }
+
+  /** Simulate the user pointing the app at a different file. */
+  setFile(text: string, name: string): void {
+    this.#text = text;
+    this.#name = name;
+    this.#revisionAtRead = null;
   }
 
   status(): StoreStatus {
@@ -52,8 +70,8 @@ export class MemoryStore implements TaskStore {
     return this.#status;
   }
 
-  async connect(_mode: ConnectMode): Promise<StoreStatus> {
-    return (this.#status = 'ready');
+  async connect(mode: ConnectMode): Promise<StoreStatus> {
+    return (this.#status = this.#onConnect?.(mode) ?? 'ready');
   }
 
   async disconnect(): Promise<void> {

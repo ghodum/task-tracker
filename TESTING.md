@@ -36,7 +36,7 @@ branches over `src/`, excluding `App.tsx`, `components/**` and `main.tsx`
 
 ## End-to-end tests (Playwright, Chromium)
 
-The native file picker cannot be automated, so the app exposes two seams —
+The native file picker cannot be automated, so the app exposes three seams —
 **only in a dev build**, guarded by `import.meta.env.DEV` in `src/main.tsx`:
 
 - **`?e2e=1`** — a `MemoryStore` whose text is kept in `localStorage`, so a
@@ -45,6 +45,10 @@ The native file picker cannot be automated, so the app exposes two seams —
 - **`?e2e=opfs`** — the real `FileSystemStore`, against a real browser file
   handle from the origin private file system. This exercises the production
   read/write/permission/conflict code. Used through `openRealFileApp()`.
+- **`?e2e=opfs-prompt`** — the same real store, but the picked handle starts
+  without write permission and refuses the request that follows the pick, the
+  way Chrome refuses one made after the picker has spent the user's gesture.
+  This is the only way to drive the extra-click path from the browser.
 
 Both expose `window.__taskTracker` with `read()` and `write()`, which is how a
 test inspects "the file" or simulates an edit made outside the app. The
@@ -57,7 +61,7 @@ production build has no seam at all — `pwa.spec.ts` asserts that.
 | `reorder.spec.ts` | Move up/down, jump to top/bottom, disabled ends, drag-and-drop, persistence |
 | `done.spec.ts` | Complete, re-open, Today/Earlier grouping, delete |
 | `due-dates.spec.ts` | Overdue/Today/Tomorrow badges, quadrant alert, tab dot, and editing a due date on the card (set, change, clear, Escape, focus return) |
-| `gate.spec.ts` | Gate screen, creating a file, hand-edit repair reporting, invalid JSON, disconnect |
+| `gate.spec.ts` | Gate screen, creating a file, the extra permission click after a pick, hand-edit repair reporting, invalid JSON, disconnect |
 | `file-storage.spec.ts` | Real file handles: load, write, pretty-printing, a later session, reload from settings |
 | `conflict.spec.ts` | Refused write, reload, overwrite, saving normally afterwards |
 | `a11y.spec.ts` | Tab-stop behaviour, focus trap, focus restoration, accessible names |

@@ -10,7 +10,7 @@ import type { TaskStore } from './storage/TaskStore.ts';
 /** The real store, or a test seam when a dev build is asked for one. */
 function createStore(): TaskStore {
   const mode = new URLSearchParams(location.search).get('e2e');
-  if (import.meta.env.DEV && (mode === '1' || mode === 'opfs')) {
+  if (import.meta.env.DEV && (mode === '1' || mode === 'opfs' || mode === 'opfs-prompt')) {
     return createE2eStore(mode as E2eMode);
   }
   return new FileSystemStore({

@@ -9,6 +9,11 @@ export class FakeFileHandle implements FsaFileHandle {
   /** What requestPermission() will resolve to. */
   grantOnRequest: PermissionState = 'granted';
   requests = 0;
+  /**
+   * Refuse the next permission request, the way Chrome does when the file
+   * picker has already consumed the user's gesture.
+   */
+  refuseNextRequest = false;
 
   constructor(
     readonly name = 'task-tracker-task.json',
@@ -44,6 +49,10 @@ export class FakeFileHandle implements FsaFileHandle {
 
   async requestPermission(): Promise<PermissionState> {
     this.requests += 1;
+    if (this.refuseNextRequest) {
+      this.refuseNextRequest = false;
+      throw new DOMException('User activation is required to request permissions.', 'SecurityError');
+    }
     this.permission = this.grantOnRequest;
     return this.permission;
   }

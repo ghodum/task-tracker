@@ -36,6 +36,8 @@ export class FileSystemStore implements TaskStore {
   readonly #handles: HandleStorage;
   readonly #pickers: Pickers;
   #status: StoreStatus;
+  /** A file picked to be created, still waiting for its first document. */
+  #unwritten = false;
   /** State of the file as of the last successful read or write. */
   #stamp: Stamp | null = null;
 
@@ -71,9 +73,9 @@ export class FileSystemStore implements TaskStore {
 
     // A remembered file only needs its permission re-granted.
     if (mode === 'open' && this.#handle) {
-      const permission = await this.#handle.requestPermission({ mode: 'readwrite' });
-      if (permission === 'granted') return (this.#status = 'ready');
-      return (this.#status = 'needs-permission');
+      if (!(await this.#grantReadWrite(this.#handle))) return (this.#status = 'needs-permission');
+      await this.#initNewFile(this.#handle);
+      return (this.#status = 'ready');
     }
 
     const handle: FsaFileHandle | undefined =
@@ -92,23 +94,47 @@ export class FileSystemStore implements TaskStore {
           )[0];
 
     if (!handle) return this.#status;
-    const permission = await handle.requestPermission({ mode: 'readwrite' });
-    if (permission !== 'granted') return (this.#status = 'needs-permission');
 
+    // Adopt and remember the handle before asking about permission. The
+    // picker already consumed the user's gesture, so a readwrite grant may
+    // have to wait for a fresh click; remembering the file first is what lets
+    // the gate offer that click instead of re-opening the picker.
     this.#handle = handle;
     this.#stamp = null;
+    this.#unwritten = mode === 'create';
     await this.#handles.save(handle);
 
-    // A freshly created file is empty; give it a valid document immediately.
-    if (mode === 'create' && (await handle.getFile()).size === 0) {
-      await this.#write(emptyTaskFile());
-    }
+    if (!(await this.#grantReadWrite(handle))) return (this.#status = 'needs-permission');
+    await this.#initNewFile(handle);
     return (this.#status = 'ready');
+  }
+
+  /** A freshly created file is empty; give it a valid document immediately. */
+  async #initNewFile(handle: FsaFileHandle): Promise<void> {
+    if (!this.#unwritten) return;
+    this.#unwritten = false;
+    if ((await handle.getFile()).size === 0) await this.#write(emptyTaskFile());
+  }
+
+  /**
+   * Readwrite permission on a just-picked handle. The picker usually grants it
+   * outright, so ask first; only fall back to requesting, which needs a user
+   * gesture the picker has already spent and so may be refused outright.
+   */
+  async #grantReadWrite(handle: FsaFileHandle): Promise<boolean> {
+    if ((await handle.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+    try {
+      return (await handle.requestPermission({ mode: 'readwrite' })) === 'granted';
+    } catch {
+      // No transient user activation left; the gate asks for another click.
+      return false;
+    }
   }
 
   async disconnect(): Promise<void> {
     this.#handle = null;
     this.#stamp = null;
+    this.#unwritten = false;
     await this.#handles.clear();
     this.#status = this.#supported() ? 'disconnected' : 'unsupported';
   }
